@@ -1,0 +1,38 @@
+{
+  "organizations": [
+    { "org_id": "ORG-001", "parent_org_id": null,    "name": "Grupo Empresarial ACME",     "type": "Corporación",   "manager_id": "W-001", "location": "Madrid",    "cost_center": "CC-000" },
+    { "org_id": "ORG-002", "parent_org_id": "ORG-001","name": "Tecnología e Innovación",    "type": "División",      "manager_id": "W-002", "location": "Madrid",    "cost_center": "CC-100" },
+    { "org_id": "ORG-003", "parent_org_id": "ORG-001","name": "Operaciones",                "type": "División",      "manager_id": "W-010", "location": "Barcelona", "cost_center": "CC-200" },
+    { "org_id": "ORG-004", "parent_org_id": "ORG-001","name": "Finanzas y Control",         "type": "División",      "manager_id": "W-020", "location": "Madrid",    "cost_center": "CC-300" },
+    { "org_id": "ORG-005", "parent_org_id": "ORG-002","name": "Desarrollo de Software",     "type": "Departamento",  "manager_id": "W-003", "location": "Madrid",    "cost_center": "CC-110" },
+    { "org_id": "ORG-006", "parent_org_id": "ORG-002","name": "Infraestructura y Cloud",    "type": "Departamento",  "manager_id": "W-007", "location": "Madrid",    "cost_center": "CC-120" },
+    { "org_id": "ORG-007", "parent_org_id": "ORG-003","name": "Logística",                  "type": "Departamento",  "manager_id": "W-011", "location": "Barcelona", "cost_center": "CC-210" },
+    { "org_id": "ORG-008", "parent_org_id": "ORG-003","name": "Atención al Cliente",        "type": "Departamento",  "manager_id": "W-015", "location": "Valencia",  "cost_center": "CC-220" },
+    { "org_id": "ORG-009", "parent_org_id": "ORG-005","name": "Frontend",                   "type": "Equipo",        "manager_id": "W-004", "location": "Madrid",    "cost_center": "CC-111" },
+    { "org_id": "ORG-010", "parent_org_id": "ORG-005","name": "Backend & APIs",             "type": "Equipo",        "manager_id": "W-006", "location": "Madrid",    "cost_center": "CC-112" }
+  ],
+  "workers": [
+    { "worker_id": "W-001", "org_id": "ORG-001", "name": "Carlos Mendoza",    "business_title": "CEO",                       "worker_type": "Employee",          "level": "0" },
+    { "worker_id": "W-002", "org_id": "ORG-001", "name": "Laura Fernández",   "business_title": "CTO",                       "worker_type": "Employee",          "level": "1" },
+    { "worker_id": "W-003", "org_id": "ORG-002", "name": "Javier Romero",     "business_title": "Director de Desarrollo",    "worker_type": "Employee",          "level": "DIRECTOR" },
+    { "worker_id": "W-004", "org_id": "ORG-005", "name": "Ana Castillo",      "business_title": "Lead Frontend",             "worker_type": "Employee",          "level": "3" },
+    { "worker_id": "W-005", "org_id": "ORG-009", "name": "Miguel Torres",     "business_title": "Senior Developer",          "worker_type": "Employee",          "level": "4" },
+    { "worker_id": "W-006", "org_id": "ORG-005", "name": "Sofía Herrera",     "business_title": "Lead Backend",              "worker_type": "Employee",          "level": "3" },
+    { "worker_id": "W-007", "org_id": "ORG-002", "name": "Roberto Díaz",      "business_title": "Director de Infraestructura","worker_type": "Employee",         "level": "DIRECTOR" },
+    { "worker_id": "W-008", "org_id": "ORG-006", "name": "Carmen López",      "business_title": "Cloud Architect",           "worker_type": "Employee",          "level": "3" },
+    { "worker_id": "W-009", "org_id": "ORG-006", "name": "DevOps Contractor", "business_title": "DevOps Engineer",           "worker_type": "Contingent Worker", "level": "CONTINGENT", "location": "Remoto" },
+    { "worker_id": "W-010", "org_id": "ORG-001", "name": "Elena Martín",      "business_title": "COO",                       "worker_type": "Employee",          "level": "1" },
+    { "worker_id": "W-011", "org_id": "ORG-003", "name": "Pedro Jiménez",     "business_title": "Director de Logística",     "worker_type": "Employee",          "level": "DIRECTOR" },
+    { "worker_id": "W-012", "org_id": "ORG-007", "name": "Isabel García",     "business_title": "Jefa de Almacén",           "worker_type": "Employee",          "level": "4", "location": "Barcelona" },
+    { "worker_id": "W-013", "org_id": "ORG-007", "name": "Luis Navarro",      "business_title": "Operario de Logística",     "worker_type": "Employee",          "level": "6", "location": "Barcelona" },
+    { "worker_id": "W-014", "org_id": "ORG-007", "name": "Logística Ext.",    "business_title": "Transportista",             "worker_type": "Contingent Worker", "level": "CONTINGENT" },
+    { "worker_id": "W-015", "org_id": "ORG-003", "name": "María Ruiz",        "business_title": "Dir. Atención al Cliente",  "worker_type": "Employee",          "level": "DIRECTOR" },
+    { "worker_id": "W-016", "org_id": "ORG-008", "name": "Jorge Morales",     "business_title": "Agente Senior",             "worker_type": "Employee",          "level": "5", "location": "Valencia" },
+    { "worker_id": "W-017", "org_id": "ORG-008", "name": "Patricia Vega",     "business_title": "Agente",                    "worker_type": "Employee",          "level": "6", "location": "Valencia" },
+    { "worker_id": "W-018", "org_id": "ORG-009", "name": "Raúl Serrano",      "business_title": "Frontend Developer",        "worker_type": "Employee",          "level": "5" },
+    { "worker_id": "W-019", "org_id": "ORG-009", "name": "Frontend Ext.",     "business_title": "UI Developer",              "worker_type": "Contingent Worker", "level": "CONTINGENT" },
+    { "worker_id": "W-020", "org_id": "ORG-001", "name": "Fernando Castro",   "business_title": "CFO",                       "worker_type": "Employee",          "level": "1" },
+    { "worker_id": "W-021", "org_id": "ORG-004", "name": "Pilar Sanz",        "business_title": "Controller",                "worker_type": "Employee",          "level": "3", "location": "Madrid" },
+    { "worker_id": "W-022", "org_id": "ORG-010", "name": "Álvaro Reyes",      "business_title": "Backend Developer",         "worker_type": "Employee",          "level": "5" }
+  ]
+}

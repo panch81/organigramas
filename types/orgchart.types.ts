@@ -84,3 +84,88 @@ export interface ExportOptions {
   includeMetadata: boolean;
   marginMm: number;
 }
+
+// ─── ADDITIONS TO orgchart.types.ts ──────────────────────────────────────────
+// Añade estas interfaces al final del fichero existente orgchart.types.ts
+
+// ── Input JSON ────────────────────────────────────────────────────────────────
+
+/** Una organización tal como viene en el JSON */
+export interface OrgWorkerInput {
+  worker_id: string;
+  manager_id?: string | null;
+  name: string;
+  business_title?: string;
+  business_line?: string;
+  division?: string;
+  company?: string;
+  worker_type?: string;
+  level?: string;
+  location?: string;
+  photo_url?: string;
+}
+
+export interface OrgOrganizationInput {
+  org_id: string;
+  parent_org_id?: string | null;
+  name: string;
+  /** worker_id del manager de esta org. Según regla Workday: pertenece a la org padre */
+  manager_id?: string | null;
+  type?: string;
+  location?: string;
+  cost_center?: string;
+}
+
+/** Formato del JSON completo para el modo Organizaciones */
+export interface OrgDiagramJson {
+  organizations: OrgOrganizationInput[];
+  workers: OrgWorkerInput[];
+}
+
+// ── Nodos del árbol de organizaciones ─────────────────────────────────────────
+
+export interface OrgTreeNode {
+  id: string;
+  parentId: string | null;
+  name: string;
+  type: string;
+  location?: string;
+  costCenter?: string;
+  /** worker_id del manager. Según Workday pertenece a la org PADRE */
+  managerId: string | null;
+  manager?: OrgPersonNode | null;
+  /** Personas que pertenecen a esta org (excluye el manager) */
+  members: OrgPersonNode[];
+  children: OrgTreeNode[];
+  depth: number;
+  totalDescendants: number;
+  directReports: number;
+  path: string[];
+  isExpanded: boolean;
+}
+
+export interface OrgPersonNode {
+  workerId: string;
+  name: string;
+  businessTitle: string;
+  workerType: 'Employee' | 'Contingent Worker';
+  level: string;
+  location?: string;
+  photoUrl?: string;
+  /** org a la que pertenece */
+  orgId: string;
+  isManager: boolean;
+}
+
+export interface OrgParseResult {
+  root: OrgTreeNode | null;
+  multipleRoots: OrgTreeNode[];
+  nodeMap: Map<string, OrgTreeNode>;
+  personMap: Map<string, OrgPersonNode>;
+  stats: {
+    totalOrgs: number;
+    totalWorkers: number;
+    maxDepth: number;
+  };
+  warnings: string[];
+}
