@@ -14,6 +14,7 @@ import type { ParseResult, WorkdayLevel, OrgChartNode } from '@/types/orgchart.t
 import { OrgChartNodeComponent_Memo, type OrgChartNodeData } from './OrgChartNode';
 import { useOrgChart } from '@/lib/hooks/useOrgChart';
 import { exportOrgChartToSvg } from '@/lib/export/svg.exporter';
+import { ExportModal, type ExportConfig, type ExportNodeOption } from './ExportModal';
 
 const NODE_WIDTH  = 224;
 const NODE_HEIGHT = 150;
@@ -57,7 +58,7 @@ function applyDagreLayout(nodes: Node[], edges: Edge[]) {
 function treeToFlowElements(
   visibleNodes: ReturnType<typeof useOrgChart>['visibleNodes'],
   expandedIds: Set<string>,
-  onToggleExpand: (id: string) => void
+  onToggleExpand: (id: string) => void,
 ) {
   const nodes: Node[] = [];
   const edges: Edge[] = [];
@@ -79,6 +80,50 @@ function treeToFlowElements(
   return applyDagreLayout(nodes, edges);
 }
 
+// ── Build export node options from visibleNodes ───────────────────────────────
+// Only nodes currently visible (respecting filters) can be selected as root
+
+function buildExportOptions(visibleNodes: OrgChartNode[]): ExportNodeOption[] {
+  return visibleNodes.map(n => ({ id: n.id, label: n.name, depth: n.depth }));
+}
+
+// ── SVG export with config ────────────────────────────────────────────────────
+
+function exportPersonasSvg(
+  parseResult: ParseResult,
+  visibleNodes: OrgChartNode[],
+  config: ExportConfig,
+  fileName: string,
+) {
+  const { rootId, maxLevels } = config;
+
+  // Find root in visible nodes
+  const rootNode = parseResult.nodeMap.get(rootId);
+  if (!rootNode) return;
+
+  // Filter visible nodes to subtree of rootId within maxLevels
+  const rootDepth = rootNode.depth;
+  const subtreeIds = new Set<string>();
+  const queue: OrgChartNode[] = [rootNode];
+  while (queue.length > 0) {
+    const n = queue.shift()!;
+    const relDepth = n.depth - rootDepth;
+    if (maxLevels > 0 && relDepth >= maxLevels) continue;
+    subtreeIds.add(n.id);
+    queue.push(...n.children);
+  }
+
+  // Intersect with visibleNodes (respect active filters)
+  const visibleIds = new Set(visibleNodes.map(n => n.id));
+  const filteredNodes = visibleNodes.filter(n => subtreeIds.has(n.id) && visibleIds.has(n.id));
+
+  // Delegate to existing exporter with the filtered subset
+  if (filteredNodes.length > 0) {
+    // We pass rootNode as root and filteredNodes as the visible set
+    exportOrgChartToSvg(rootNode, filteredNodes, fileName);
+  }
+}
+
 interface OrgChartCanvasProps {
   parseResult: ParseResult;
   fileName?: string;
@@ -92,7 +137,8 @@ export function OrgChartCanvas({ parseResult, fileName = 'organigrama' }: OrgCha
     visibleNodes, filterStats,
   } = useOrgChart(parseResult);
 
-  const [panelOpen, setPanelOpen] = useState(true);
+  const [panelOpen,   setPanelOpen]   = useState(true);
+  const [showExport,  setShowExport]  = useState(false);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
@@ -102,8 +148,22 @@ export function OrgChartCanvas({ parseResult, fileName = 'organigrama' }: OrgCha
     setEdges(le);
   }, [visibleNodes, expandedIds, toggleExpand]);
 
-  // Genera botones de Nivel Org dinámicamente según el dataset
   const orgLevelButtons = Array.from({ length: maxOrgDepth }, (_, i) => i + 1);
+
+  // Export options: only visible nodes as potential roots
+  const exportNodeOptions = buildExportOptions(visibleNodes);
+  const defaultRootId = parseResult.root?.id ?? visibleNodes[0]?.id ?? '';
+
+  // Build filter summary for modal
+  const filterParts: string[] = [];
+  if (filters.maxOrgLevel !== null) filterParts.push(`Nivel Org ≤ ${filters.maxOrgLevel}`);
+  if (filters.personLevels.size > 0) filterParts.push(`Niveles: ${[...filters.personLevels].join(', ')}`);
+  const filterSummary = filterParts.join(' · ') || undefined;
+
+  const handleExport = (config: ExportConfig) => {
+    setShowExport(false);
+    exportPersonasSvg(parseResult, visibleNodes, config, fileName);
+  };
 
   return (
     <div className="w-full h-full">
@@ -125,21 +185,16 @@ export function OrgChartCanvas({ parseResult, fileName = 'organigrama' }: OrgCha
 
         <Panel position="top-left" className="flex flex-col gap-2">
 
-          {/* ── Botón toggle ── */}
-          <button
-            onClick={() => setPanelOpen(o => !o)}
-            className="self-start bg-white rounded-xl shadow-md border border-gray-100 px-3 py-2 text-[11px] font-semibold text-gray-500 hover:text-blue-600 hover:border-blue-200 transition-all flex items-center gap-2"
-          >
+          <button onClick={() => setPanelOpen(o => !o)}
+            className="self-start bg-white rounded-xl shadow-md border border-gray-100 px-3 py-2 text-[11px] font-semibold text-gray-500 hover:text-blue-600 hover:border-blue-200 transition-all flex items-center gap-2">
             {panelOpen ? '◀ Ocultar panel' : '▶ Panel'}
-            {filterStats.hasFilters && !panelOpen && (
-              <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
-            )}
+            {filterStats.hasFilters && !panelOpen && <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />}
           </button>
 
           {panelOpen && (
             <div className="flex flex-col gap-2 max-h-[calc(100vh-120px)] overflow-y-auto pr-1">
 
-              {/* ── Nivel Org ── */}
+              {/* Nivel Org */}
               <div className="bg-white rounded-xl shadow-md border border-gray-100 p-3 flex flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Nivel Org</p>
@@ -148,7 +203,7 @@ export function OrgChartCanvas({ parseResult, fileName = 'organigrama' }: OrgCha
                   )}
                 </div>
                 <div className="flex gap-1.5">
-                  <button onClick={expandAll} className="flex-1 text-[10px] font-medium px-2 py-1.5 rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-700 text-gray-600 transition-colors">Expandir todo</button>
+                  <button onClick={expandAll}   className="flex-1 text-[10px] font-medium px-2 py-1.5 rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-700 text-gray-600 transition-colors">Expandir todo</button>
                   <button onClick={collapseAll} className="flex-1 text-[10px] font-medium px-2 py-1.5 rounded-lg bg-gray-100 hover:bg-blue-50 hover:text-blue-700 text-gray-600 transition-colors">Colapsar todo</button>
                 </div>
                 <div className="flex gap-1 flex-wrap">
@@ -162,7 +217,7 @@ export function OrgChartCanvas({ parseResult, fileName = 'organigrama' }: OrgCha
                 </div>
               </div>
 
-              {/* ── Nivel de Persona ── */}
+              {/* Nivel de Persona */}
               <div className="bg-white rounded-xl shadow-md border border-gray-100 p-3 flex flex-col gap-2">
                 <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Nivel de Persona</p>
                 <p className="text-[10px] text-gray-400 -mt-1">Selecciona uno o varios para filtrar</p>
@@ -184,7 +239,7 @@ export function OrgChartCanvas({ parseResult, fileName = 'organigrama' }: OrgCha
                 )}
               </div>
 
-              {/* ── Resumen ── */}
+              {/* Resumen */}
               <div className="bg-white rounded-xl shadow-md border border-gray-100 p-3">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Resumen</p>
@@ -201,9 +256,9 @@ export function OrgChartCanvas({ parseResult, fileName = 'organigrama' }: OrgCha
                 </div>
               </div>
 
-              {/* ── Exportar SVG ── */}
+              {/* Exportar SVG */}
               <button
-                onClick={() => { if (parseResult.root) exportOrgChartToSvg(parseResult.root, visibleNodes, fileName); }}
+                onClick={() => setShowExport(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold px-3 py-2 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
               >
                 ⬇️ Exportar SVG
@@ -211,9 +266,19 @@ export function OrgChartCanvas({ parseResult, fileName = 'organigrama' }: OrgCha
 
             </div>
           )}
-
         </Panel>
       </ReactFlow>
+
+      {showExport && (
+        <ExportModal
+          nodes={exportNodeOptions}
+          maxDepth={parseResult.stats.maxDepth}
+          defaultRootId={defaultRootId}
+          onExport={handleExport}
+          onClose={() => setShowExport(false)}
+          filterSummary={filterSummary}
+        />
+      )}
     </div>
   );
 }
